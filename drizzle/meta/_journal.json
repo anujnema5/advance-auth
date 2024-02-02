@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1706870576492,
+      "tag": "0000_secret_puma",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1706872651474,
+      "tag": "0001_robust_grandmaster",
+      "breakpoints": true
+    }
+  ]
+}

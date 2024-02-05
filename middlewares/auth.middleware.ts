@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { users } from "../db/schema";
+import { verify, TokenExpiredError } from 'jsonwebtoken';
 
 interface AuthenticatedRequest extends Request {
     user?: any; // Replace 'any' with the actual type of your user object
@@ -16,7 +17,7 @@ export const verifyJWT = async (req: AuthenticatedRequest, res: Response, next: 
     }
 
     try {
-        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string) as any
+        const decodedToken = verify(token, process.env.ACCESS_TOKEN_SECRET as string) as any
 
         const user = await db.query.users.findFirst({
             where: eq(users.id, decodedToken.userId),
@@ -24,13 +25,18 @@ export const verifyJWT = async (req: AuthenticatedRequest, res: Response, next: 
                 password: false,
                 refreshToken: false
             }
-        })        
+        })
 
         req.user = user
         next();
 
     } catch (error) {
-        console.log(error)
-        return res.status(401).json({message : "Something went wrong"})
+        if (error instanceof TokenExpiredError) {
+            console.log("Token expired")
+        } else {
+            console.log("Some strange activity detected");
+            
+        }
+        return res.status(401).json({ message: "Something went wrong" })
     }
 }

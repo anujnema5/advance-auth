@@ -13,6 +13,7 @@ dotenv.config();
 
 export const signinUser = async (req: Request, res: Response) => {
     try {
+
         const { username, email, password } = req.body;
 
         if (!username && !email) {
@@ -23,18 +24,23 @@ export const signinUser = async (req: Request, res: Response) => {
             where: eq(users.username, username),
         }) as any
 
-        const isPasswordCorrect = await bcrypt.compare(password, foundeUser?.password as string)
+
+        const isPasswordCorrect = await bcrypt.compare(password, foundeUser?.password as string)        
 
         if (!isPasswordCorrect) {
             return res.status(401).json({ message: "You've entered wrong password" })
         }
-
+        
+        // console.log("I am triggering here also");
         const { accessToken, refreshToken } = await generateAccessRefreshToken(foundeUser.id) as any
+        // console.log({accessToken, refreshToken});
+        
 
         const options = {
             httpOnly: true,
             secure: true
         }
+
 
         return res.status(200)
             .cookie("accessToken", accessToken, options)
@@ -94,14 +100,17 @@ export const accessRefershToken = async (req: Request, res: Response) => {
         }
 
         const foundUser = await db.query.users.findFirst({
-            where: eq(users.id, decodedToken.userId)
+            where: eq(users.id, decodedToken.userId),
+            columns: {
+                password: false
+            }
         })
 
-        if(foundUser?.refreshToken !== incomingrefreshToken) {
+        if (foundUser?.refreshToken !== incomingrefreshToken) {
             return res.status(401).json({ message: "Token expired or already been used" })
         }
 
-        const {accessToken, refreshToken} = await generateAccessRefreshToken(foundUser?.id) as any        
+        const { accessToken, refreshToken } = await generateAccessRefreshToken(foundUser?.id) as any
 
         const options = {
             httpOnly: true,
@@ -109,10 +118,10 @@ export const accessRefershToken = async (req: Request, res: Response) => {
         }
 
         return res
-        .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
-        .json({accessToken, refreshToken: refreshToken, message : "Accesstoken refreshed"})
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json({ accessToken, refreshToken: refreshToken, message: "Accesstoken refreshed" })
 
     } catch (error) {
         return res.status(401).json({ message: "non-valid refresh token", error })
